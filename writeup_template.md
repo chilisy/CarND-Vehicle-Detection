@@ -53,11 +53,11 @@ Here is an example using the `YCrCb` color space and HOG parameters of `orientat
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of parameters and...
+Firstly I've tried change color space parameters and found out that 'YCrCb' and 'YUV' color space could achieve best results. 
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+I trained a linear SVM using only HOG-features. I've tried other SVM algorithms like 'rbf' or 'poly', they work also and could achieve slightly better recoginition results but are far more time-consuming. Also LinearSVC() is far more efficient than SVC(kernel='linear')
 
 ###Sliding Window Search
 

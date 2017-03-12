@@ -35,31 +35,14 @@ output_dir = '../output_images/'
 all_files = os.listdir(img_dir)
 img_files = [file_names for file_names in all_files if not file_names[0] == '.']
 #img_files = ['test1.jpg']
-out_file_name = output_dir + 'raw/marked_'
-
-# get classifier
-with open(svc_file, "rb") as f:
-    svc_data = pickle.load(f)
-svc = svc_data["svc"]
-X_scaler = svc_data["scaler"]
-
-ystarts = [400, 400, 400]
-ystops = [656, 656, 528]
-scales = [1.5, 1, 0.75]
+out_file_name = output_dir + 'final/processed_'
 
 for img_file in img_files:
     img = mpimg.imread(img_dir+img_file)
-    # find car on image
-    vehicles_boxes = []
-    for ystart, ystop, scale in zip(ystarts, ystops, scales):
-        v_boxes = find_cars(img, ystart, ystop, scale, svc, X_scaler, orient,
-                            pix_per_cell, cell_per_block, spatial_size, hist_bins)
-        if len(v_boxes) > 0:
-            for box in v_boxes:
-                vehicles_boxes.append(box)
-    draw_img = draw_boxes(img, vehicles_boxes)
-    #draw_img = generate_heatmap(img, vehicles_boxes)
 
+    draw_img = process_image(img)
+
+    #cv2.imwrite(out_file_name + img_file, heatmap)
     cv2.imwrite(out_file_name+img_file, cv2.cvtColor(draw_img, cv2.COLOR_BGR2RGB))
     #plt.imshow(draw_img)
     #plt.show()

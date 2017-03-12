@@ -4,7 +4,9 @@ import os, time
 import pickle
 from skimage.feature import hog
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 from sklearn.svm import SVC
+from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from scipy.ndimage.measurements import label
@@ -89,11 +91,17 @@ def add_heat(heatmap, bbox_list):
     return heatmap  # Iterate through list of bboxes
 
 
-def apply_threshold(heatmap, threshold):
+def apply_threshold(heatmap, threshold, bbox_list):
     # Zero out pixels below the threshold
-    heatmap[heatmap <= threshold] = 0
+    outmap = np.copy(heatmap)
+    outmap[heatmap <= threshold] = 0
+
+    for box in bbox_list:
+        if np.any(outmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] > 0):
+            outmap[box[0][1]:box[1][1], box[0][0]:box[1][0]] +=1
+
     # Return thresholded map
-    return heatmap
+    return outmap
 
 
 def draw_labeled_bboxes(img, labels):
@@ -280,7 +288,7 @@ def train_classifier(folder_cars, folder_non_cars, svc_file, features_file,
         print('Feature vector length:', len(X_train[0]))
 
         # define svm
-        svc = SVC(kernel='linear')
+        svc = LinearSVC()
 
         t = time.time()
         svc.fit(X_train, y_train)
@@ -383,7 +391,8 @@ def generate_heatmap(img, vehicles_boxes):
     heat = add_heat(heat, vehicles_boxes)
 
     # Apply threshold to help remove false positives
-    heat = apply_threshold(heat, 3)
+    heat = apply_threshold(heat, 3, vehicles_boxes)
+
 
     # Visualize the heatmap when displaying
     heatmap = np.clip(heat, 0, 255)
@@ -429,5 +438,8 @@ def process_image(img):
     # generate heat maps
     draw_img, heat_map = generate_heatmap(img, vehicles_boxes)
 
-    return heat_map
+    heat_map = np.expand_dims(heat_map / 19 * 255, axis=2)
+    heat_map = np.repeat(heat_map, 3, axis=2)
+
+    return draw_img
 
