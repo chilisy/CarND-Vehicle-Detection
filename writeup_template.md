@@ -15,14 +15,20 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+[image1]: ./examples/figure_car_non_car.png
+[image2]: ./examples/figure_car_cspace_hog.png
+[image2a]: ./examples/figure_noncar_cspace_hog.png
+[image3]: ./output_images/search_area_resized.jpg
+[image4]: ./output_images/raw_output/marked_test1_resized.jpg
+[image4a]: ./output_images/raw_output/marked_test6_resized.jpg
+[image5]: ./output_images/heatmaps/heatmap_test1_resized.jpg
+[image5a]: ./output_images/heatmaps/heatmap_test6_resized.jpg
+[image6]: ./output_images/labels/labels_test1_resized.jpg
+[image6a]: ./output_images/labels/labels_test6_resized.jpg
+[image7]: ./output_images/final/processed_test1_resized.jpg
+[image7a]: ./output_images/final/processed_test6_resized.jpg
+[video1]: ./output_images/processed_project_video.mp4
+
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ###Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -32,13 +38,12 @@ The goals / steps of this project are the following:
 
 ####1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Vehicle-Detection/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
 
-You're reading it!
 
 ###Histogram of Oriented Gradients (HOG)
 
 ####1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained in lines 164 to 215 in function_lib.py.  
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
@@ -46,38 +51,48 @@ I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an 
 
 I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here is an example using the `YCrCb` color space and HOG parameters of `orientations=24`, `pixels_per_cell=(8, 8)` and `cells_per_block=(1, 1)`:
 
 
 ![alt text][image2]
+![alt text][image2a]
+
 
 ####2. Explain how you settled on your final choice of HOG parameters.
 
-Firstly I've tried change color space parameters and found out that 'YCrCb' and 'YUV' color space could achieve best results. 
+Firstly I've tried change color space parameters and found out that 'YCrCb' and 'YUV' color space could achieve best results.　I've tried different settings to test on samples of 500 car and non-car-images each. I found out that more orientation could be improve the results up to ca. 30. I've chosen 24 for further processes. I've also experimented with other parameters `pixels_per_cell` and `cells_per_block` as well and found out that the influence of these parameter are marginal. I've chosen `pixels_per_cell=(8, 8)` and `cells_per_block=(1, 1)` for further processing. 
 
 ####3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using only HOG-features. I've tried other SVM algorithms like 'rbf' or 'poly', they work also and could achieve slightly better recoginition results but are far more time-consuming. Also LinearSVC() is far more efficient than SVC(kernel='linear')
+The code for this step is contained in lines 218 to 306 in function_lib.py.
+
+I trained a linear SVM using only HOG-features. I've tried other SVM algorithms such as 'rbf' or 'poly', they work also and could achieve slightly better recoginition results but are far more time-consuming. Also coding LinearSVC() is far more time-efficient than SVC(kernel='linear').
+
+Firstly I've converted the image in YCrCb color space and extract HOG-features of all three channels. After all images are processed this way, I normalized the data using scikit StandardScaler over all data. And finally, I trained the normalized data using LinearSVC. 
 
 ###Sliding Window Search
 
 ####1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+I've decided to search in three different scales: `96x96` in blue box, `64x64` in cyan box (same as blue box) and `48x48` in yellow box (only the upper half of blue box)：
 
 ![alt text][image3]
 
+I've searched with smaller scale only in yellow box because the cars are far away and smaller in this area. Nearer cars can only appear large. 
+
+
 ####2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Ultimately I searched on three scales using YCrCb 3-channel HOG features only, which provided a nice result.  Here are some example images:
 
 ![alt text][image4]
+![alt text][image4a]
 ---
 
 ### Video Implementation
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./output_images/processed_project_video.mp4)
 
 
 ####2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
@@ -86,15 +101,24 @@ I recorded the positions of positive detections in each frame of the video.  Fro
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
-### Here are six frames and their corresponding heatmaps:
+### Here are 2 frames and their corresponding thresholded heatmaps:
 
+![alt text][image4]
 ![alt text][image5]
+![alt text][image4a]
+![alt text][image5a]
 
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
+
+### Here a the outputs of `scipy.ndimage.measurements.label()` on the integrated heatmap from 2 frames above:
+
 ![alt text][image6]
+![alt text][image6a]
 
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
+
+### Here the resulting bounding boxes are drawn onto the 2 frames above:
+
 ![alt text][image7]
+![alt text][image7a]
 
 
 
@@ -104,5 +128,7 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The pipeline I've created does not contain any classes which iterate throughout the video processing that could provide information of frames before to identify false target. It only filters out false recognition via high threshold value. This could results in failed recognitions in one or another frame. Also I will combine the vehicle recognition with lane detection since this will narrow down the search areas. Currently the video processing is very time consuming and not real time.  
+
+
 

@@ -401,7 +401,7 @@ def generate_heatmap(img, vehicles_boxes):
     labels = label(heatmap)
     draw_img = draw_labeled_bboxes(np.copy(img), labels)
 
-    return draw_img, heatmap
+    return draw_img, heat #labels[0]
 
 
 def process_image(img):
@@ -441,5 +441,58 @@ def process_image(img):
     heat_map = np.expand_dims(heat_map / 19 * 255, axis=2)
     heat_map = np.repeat(heat_map, 3, axis=2)
 
-    return draw_img
+    return draw_img, heat_map
 
+
+def plot_hog_feature(folder_cars, folder_non_cars, orient, pix_per_cell, cell_per_block):
+    # get all file names of non car images
+    notcars = []
+    subfld_notcars = os.listdir(folder_non_cars)
+    subfld_notcars = [file_names for file_names in subfld_notcars if not file_names[0] == '.']
+    for subfld in subfld_notcars:
+        all_img_names = os.listdir(folder_non_cars + subfld)
+        all_img_names = [file_names for file_names in all_img_names if not file_names[0] == '.']
+        for image_name in all_img_names:
+            notcars.append(folder_non_cars + subfld + '/' + image_name)
+
+    # get all file names of car images
+    cars = []
+    subfld_cars = os.listdir(folder_cars)
+    subfld_cars = [file_names for file_names in subfld_cars if not file_names[0] == '.']
+    for subfld in subfld_cars:
+        all_img_names = os.listdir(folder_cars + subfld)
+        all_img_names = [file_names for file_names in all_img_names if not file_names[0] == '.']
+        for image_name in all_img_names:
+            cars.append(folder_cars + subfld + '/' + image_name)
+
+    # Create a list to append feature vectors to
+    features = []
+    # Iterate through the list of images
+    image_files = [cars[0], notcars[0]]
+    images = []
+    for file in image_files:
+        # Read in each one by one
+        image = mpimg.imread(file)
+        feature_image = cv2.cvtColor(image, cv2.COLOR_RGB2YCrCb)
+        images.append(image)
+        hog_images = []
+        for channel in range(feature_image.shape[2]):
+            features, hog_image = get_hog_features(feature_image[:, :, channel], orient,
+                                                   pix_per_cell, cell_per_block, vis=True, feature_vec=True)
+
+            hog_images.append(hog_image)
+
+        fig = plt.figure()
+        plt.subplot(131)
+        plt.imshow(image)
+        plt.title('Example Non Car Image')
+        plt.subplot(132)
+        plt.imshow(feature_image, cmap='gray')
+        plt.title('YCrCb Color Space')
+        plt.subplot(133)
+        plt.imshow(hog_images[0], cmap='gray')
+        plt.title('HOG Visualization')
+        plt.show()
+
+
+    return features
